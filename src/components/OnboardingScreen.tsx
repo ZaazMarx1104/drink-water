@@ -1,6 +1,6 @@
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { ChevronRight, SkipForward } from 'lucide-react';
+import { ChevronRight, ChevronLeft, SkipForward } from 'lucide-react';
 
 interface OnboardingScreenProps {
   step: number;
@@ -10,7 +10,9 @@ interface OnboardingScreenProps {
   children: React.ReactNode;
   onContinue: () => void;
   onSkip?: () => void;
+  onBack?: () => void;
   showSkip?: boolean;
+  showBack?: boolean;
   continueDisabled?: boolean;
   illustration?: React.ReactNode;
 }
@@ -23,19 +25,31 @@ export function OnboardingScreen({
   children,
   onContinue,
   onSkip,
+  onBack,
   showSkip = false,
+  showBack = false,
   continueDisabled = false,
   illustration,
 }: OnboardingScreenProps) {
   return (
-    <div className="flex min-h-screen flex-col bg-background safe-area-top safe-area-bottom">
+    <div className="flex min-h-screen flex-col bg-background safe-area-top safe-area-bottom relative z-10">
       {/* Header with progress */}
       <div className="flex items-center justify-between p-4">
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-muted-foreground">
-            {step}/{totalSteps}
-          </span>
-        </div>
+        {showBack && onBack ? (
+          <button
+            onClick={onBack}
+            className="flex items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <ChevronLeft className="h-4 w-4" />
+            Back
+          </button>
+        ) : (
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-medium text-muted-foreground">
+              {step}/{totalSteps}
+            </span>
+          </div>
+        )}
         
         {/* Progress dots */}
         <div className="flex gap-1.5">
@@ -43,8 +57,8 @@ export function OnboardingScreen({
             <div
               key={i}
               className={cn(
-                "h-2 w-2 rounded-full transition-all",
-                i + 1 <= step ? "bg-primary w-4" : "bg-muted"
+                "h-2 rounded-full transition-all",
+                i + 1 <= step ? "bg-primary w-4" : "bg-muted w-2"
               )}
             />
           ))}
@@ -64,7 +78,7 @@ export function OnboardingScreen({
 
       {/* Illustration */}
       {illustration && (
-        <div className="flex justify-center py-6 animate-float">
+        <div className="flex justify-center py-6">
           {illustration}
         </div>
       )}
@@ -86,7 +100,7 @@ export function OnboardingScreen({
         <Button
           onClick={onContinue}
           disabled={continueDisabled}
-          className="w-full h-14 text-lg font-semibold water-gradient hover:opacity-90"
+          className="w-full h-14 text-lg font-semibold water-gradient hover:opacity-90 shadow-water"
         >
           CONTINUE
           <ChevronRight className="ml-2 h-5 w-5" />

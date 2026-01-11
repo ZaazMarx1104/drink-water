@@ -1,15 +1,18 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useHydration } from '@/contexts/HydrationContext';
 import { CircularProgress } from '@/components/CircularProgress';
 import { WaterButton } from '@/components/WaterButton';
 import { WeatherBadge } from '@/components/WeatherBadge';
 import { TabBar, TabId } from '@/components/TabBar';
+import { WaterWarningDialog } from '@/components/WaterWarningDialog';
+import { MorningSurvey } from '@/components/MorningSurvey';
 import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
-import { Droplets, Plus, Clock, TrendingUp, Award, Settings, ChevronRight, Trash2 } from 'lucide-react';
+import { Droplets, Clock, TrendingUp, Award, Settings, Trash2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { toast } from 'sonner';
+import { useWeather } from '@/hooks/useWeather';
 import StatsPage from './Stats';
 import ProfilePage from './Profile';
 
@@ -23,24 +26,66 @@ export default function Dashboard() {
     todayLogs,
     removeLog,
     weather,
+    setWeather,
+    checkWaterWarnings,
+    previousDayData,
+    submitFeedback,
+    showMorningSurvey,
+    setShowMorningSurvey,
+    profile,
   } = useHydration();
+
+  const { weather: liveWeather, requestLocation } = useWeather();
 
   const [activeTab, setActiveTab] = useState<TabId>('drink');
   const [customAmount, setCustomAmount] = useState('');
   const [isCustomDialogOpen, setIsCustomDialogOpen] = useState(false);
   const [isPastDialogOpen, setIsPastDialogOpen] = useState(false);
+  const [pendingAmount, setPendingAmount] = useState<number | null>(null);
+  const [warningType, setWarningType] = useState<'hourly' | 'daily' | null>(null);
+  const [showWarning, setShowWarning] = useState(false);
 
   const percentage = Math.round((totalConsumed / hydrationResult.dailyTarget) * 100);
   const remaining = Math.max(0, hydrationResult.dailyTarget - totalConsumed);
 
+  // Fetch weather on mount if GPS enabled
+  useEffect(() => {
+    if (profile.gpsEnabled && !weather) {
+      requestLocation();
+    }
+  }, [profile.gpsEnabled, weather, requestLocation]);
+
+  // Update weather in context when live weather changes
+  useEffect(() => {
+    if (liveWeather) {
+      setWeather(liveWeather);
+    }
+  }, [liveWeather, setWeather]);
+
   const handleAddWater = (amount: number) => {
+    const warnings = checkWaterWarnings(amount);
+
+    if (warnings.hourly || warnings.daily) {
+      setPendingAmount(amount);
+      setWarningType(warnings.hourly ? 'hourly' : 'daily');
+      setShowWarning(true);
+      return;
+    }
+
+    confirmAddWater(amount);
+  };
+
+  const confirmAddWater = (amount: number) => {
     addWater(amount);
+    toast.success(`Added ${amount} ml! 💧`);
+    setPendingAmount(null);
+    setShowWarning(false);
   };
 
   const handleCustomAdd = () => {
     const amount = parseInt(customAmount);
     if (amount > 0 && amount <= 5000) {
-      addWater(amount);
+      handleAddWater(amount);
       setCustomAmount('');
       setIsCustomDialogOpen(false);
     }
@@ -48,10 +93,21 @@ export default function Dashboard() {
 
   const renderDrinkTab = () => (
     <div className="flex flex-col min-h-[calc(100vh-4rem)] pb-20">
+      {/* Bubbles background */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="bubble bubble-1" />
+        <div className="bubble bubble-2" />
+        <div className="bubble bubble-3" />
+        <div className="bubble bubble-4" />
+        <div className="bubble bubble-5" />
+      </div>
+
       {/* Header */}
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-4 relative z-10">
         <div className="flex items-center gap-2">
-          <Droplets className="h-6 w-6 text-primary" />
+          <div className="bubble-glow rounded-full p-1">
+            <Droplets className="h-6 w-6 text-primary" />
+          </div>
           <h1 className="text-xl font-bold water-text-gradient">DrinkWater</h1>
         </div>
         <button 
@@ -63,7 +119,7 @@ export default function Dashboard() {
       </div>
 
       {/* Progress Section */}
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-4">
+      <div className="flex-1 flex flex-col items-center justify-center px-6 py-4 relative z-10">
         {/* Weather Badge */}
         <WeatherBadge
           temperature={weather?.temperature}
@@ -72,22 +128,24 @@ export default function Dashboard() {
         />
 
         {/* Circular Progress */}
-        <CircularProgress
-          value={totalConsumed}
-          max={hydrationResult.dailyTarget}
-          size={240}
-          strokeWidth={16}
-          className="mb-6"
-        >
-          <div className="text-center">
-            <div className="text-5xl font-bold water-text-gradient">
-              {percentage}%
+        <div className="relative">
+          <CircularProgress
+            value={totalConsumed}
+            max={hydrationResult.dailyTarget}
+            size={240}
+            strokeWidth={16}
+            className="mb-6"
+          >
+            <div className="text-center">
+              <div className="text-5xl font-bold water-text-gradient">
+                {percentage}%
+              </div>
+              <div className="text-sm text-muted-foreground mt-1">
+                {totalConsumed} / {hydrationResult.dailyTarget} ml
+              </div>
             </div>
-            <div className="text-sm text-muted-foreground mt-1">
-              {totalConsumed} / {hydrationResult.dailyTarget} ml
-            </div>
-          </div>
-        </CircularProgress>
+          </CircularProgress>
+        </div>
 
         {/* Status Message */}
         <div className="text-center mb-6 animate-fade-in">
@@ -117,7 +175,7 @@ export default function Dashboard() {
       </div>
 
       {/* Quick Add Section */}
-      <div className="px-6 pb-6">
+      <div className="px-6 pb-6 relative z-10">
         {/* Quick amount buttons */}
         <div className="grid grid-cols-4 gap-3 mb-4">
           {quickAmounts.map((amount) => (
@@ -217,9 +275,28 @@ export default function Dashboard() {
       </div>
 
       {/* Ad Banner Placeholder */}
-      <div className="fixed bottom-16 left-0 right-0 h-14 bg-muted border-t border-border flex items-center justify-center">
+      <div className="fixed bottom-16 left-0 right-0 h-14 bg-muted border-t border-border flex items-center justify-center z-20">
         <span className="text-xs text-muted-foreground">AdMob Banner (320×50)</span>
       </div>
+
+      {/* Water Warning Dialog */}
+      <WaterWarningDialog
+        open={showWarning}
+        onOpenChange={setShowWarning}
+        type={warningType || 'hourly'}
+        onConfirm={() => pendingAmount && confirmAddWater(pendingAmount)}
+      />
+
+      {/* Morning Survey */}
+      {previousDayData && (
+        <MorningSurvey
+          open={showMorningSurvey}
+          onOpenChange={setShowMorningSurvey}
+          previousIntake={previousDayData.consumed}
+          previousTarget={previousDayData.target}
+          onSubmit={submitFeedback}
+        />
+      )}
     </div>
   );
 
