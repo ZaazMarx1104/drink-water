@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, ReactNode, useCallback } from 'react';
 import { 
   UserProfile, 
   WeatherData, 
@@ -6,6 +6,7 @@ import {
   calculateHydration, 
   defaultProfile 
 } from '@/lib/hydration';
+import { Medication } from '@/components/MedicationsList';
 
 interface HydrationLog {
   id: string;
@@ -14,18 +15,24 @@ interface HydrationLog {
 }
 
 interface HydrationContextType {
-  profile: UserProfile;
-  setProfile: (profile: UserProfile) => void;
+  profile: UserProfile & { medicationsList?: Medication[] };
+  setProfile: (profile: UserProfile & { medicationsList?: Medication[] }) => void;
   weather: WeatherData | null;
   setWeather: (weather: WeatherData | null) => void;
   hydrationResult: HydrationResult;
   todayLogs: HydrationLog[];
   totalConsumed: number;
-  addWater: (amount: number) => void;
+  addWater: (amount: number) => { needsHourlyWarning: boolean; needsDailyWarning: boolean };
   removeLog: (id: string) => void;
   onboardingComplete: boolean;
   setOnboardingComplete: (complete: boolean) => void;
   weeklyData: { day: string; amount: number; target: number }[];
+  lastHourIntake: number;
+  checkWaterWarnings: (amount: number) => { hourly: boolean; daily: boolean };
+  previousDayData: { consumed: number; target: number } | null;
+  submitFeedback: (rating: number) => void;
+  showMorningSurvey: boolean;
+  setShowMorningSurvey: (show: boolean) => void;
 }
 
 const HydrationContext = createContext<HydrationContextType | undefined>(undefined);
@@ -35,10 +42,12 @@ const STORAGE_KEYS = {
   LOGS: 'drinkwater_logs',
   ONBOARDING: 'drinkwater_onboarding',
   WEEKLY: 'drinkwater_weekly',
+  LAST_SURVEY_DATE: 'drinkwater_last_survey',
+  PREVIOUS_DAY: 'drinkwater_previous_day',
 };
 
 export function HydrationProvider({ children }: { children: ReactNode }) {
-  const [profile, setProfileState] = useState<UserProfile>(() => {
+  const [profile, setProfileState] = useState<UserProfile & { medicationsList?: Medication[] }>(() => {
     const saved = localStorage.getItem(STORAGE_KEYS.PROFILE);
     return saved ? JSON.parse(saved) : defaultProfile;
   });
@@ -50,7 +59,6 @@ export function HydrationProvider({ children }: { children: ReactNode }) {
     if (saved) {
       const parsed = JSON.parse(saved);
       const today = new Date().toDateString();
-      // Only return logs from today
       return parsed.filter((log: HydrationLog) => 
         new Date(log.timestamp).toDateString() === today
       );
@@ -66,7 +74,6 @@ export function HydrationProvider({ children }: { children: ReactNode }) {
     const saved = localStorage.getItem(STORAGE_KEYS.WEEKLY);
     if (saved) return JSON.parse(saved);
     
-    // Generate last 7 days with random data for demo
     const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     const today = new Date();
     return Array.from({ length: 7 }, (_, i) => {
@@ -80,9 +87,65 @@ export function HydrationProvider({ children }: { children: ReactNode }) {
     });
   });
 
+  const [previousDayData, setPreviousDayData] = useState<{ consumed: number; target: number } | null>(() => {
+    const saved = localStorage.getItem(STORAGE_KEYS.PREVIOUS_DAY);
+    return saved ? JSON.parse(saved) : null;
+  });
+
+  const [showMorningSurvey, setShowMorningSurvey] = useState(false);
+
   const totalConsumed = todayLogs.reduce((sum, log) => sum + log.amount, 0);
 
   const hydrationResult = calculateHydration(profile, weather, totalConsumed);
+
+  // Calculate last hour intake
+  const lastHourIntake = todayLogs
+    .filter((log) => {
+      const logTime = new Date(log.timestamp).getTime();
+      const oneHourAgo = Date.now() - 60 * 60 * 1000;
+      return logTime > oneHourAgo;
+    })
+    .reduce((sum, log) => sum + log.amount, 0);
+
+  // Check if morning survey should be shown
+  useEffect(() => {
+    const lastSurveyDate = localStorage.getItem(STORAGE_KEYS.LAST_SURVEY_DATE);
+    const today = new Date().toDateString();
+    
+    if (onboardingComplete && previousDayData && lastSurveyDate !== today) {
+      // Show survey in the morning (between 5am and 11am)
+      const hour = new Date().getHours();
+      if (hour >= 5 && hour <= 11) {
+        setShowMorningSurvey(true);
+      }
+    }
+  }, [onboardingComplete, previousDayData]);
+
+  // Save previous day data at midnight
+  useEffect(() => {
+    const checkNewDay = () => {
+      const lastDateStr = localStorage.getItem('drinkwater_last_date');
+      const today = new Date().toDateString();
+      
+      if (lastDateStr && lastDateStr !== today) {
+        // New day - save yesterday's data
+        setPreviousDayData({
+          consumed: totalConsumed,
+          target: hydrationResult.dailyTarget,
+        });
+        localStorage.setItem(STORAGE_KEYS.PREVIOUS_DAY, JSON.stringify({
+          consumed: totalConsumed,
+          target: hydrationResult.dailyTarget,
+        }));
+      }
+      
+      localStorage.setItem('drinkwater_last_date', today);
+    };
+
+    checkNewDay();
+    const interval = setInterval(checkNewDay, 60000); // Check every minute
+    return () => clearInterval(interval);
+  }, [totalConsumed, hydrationResult.dailyTarget]);
 
   // Update weekly data for today
   useEffect(() => {
@@ -121,7 +184,7 @@ export function HydrationProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEYS.WEEKLY, JSON.stringify(weeklyData));
   }, [weeklyData]);
 
-  const setProfile = (newProfile: UserProfile) => {
+  const setProfile = (newProfile: UserProfile & { medicationsList?: Medication[] }) => {
     setProfileState(newProfile);
   };
 
@@ -129,17 +192,42 @@ export function HydrationProvider({ children }: { children: ReactNode }) {
     setOnboardingCompleteState(complete);
   };
 
-  const addWater = (amount: number) => {
+  const checkWaterWarnings = useCallback((amount: number): { hourly: boolean; daily: boolean } => {
+    const newLastHourIntake = lastHourIntake + amount;
+    const newTotalConsumed = totalConsumed + amount;
+    const dailyThreshold = hydrationResult.dailyTarget * 1.5;
+
+    return {
+      hourly: newLastHourIntake > 1000,
+      daily: newTotalConsumed > dailyThreshold,
+    };
+  }, [lastHourIntake, totalConsumed, hydrationResult.dailyTarget]);
+
+  const addWater = useCallback((amount: number) => {
+    const warnings = checkWaterWarnings(amount);
+    
     const newLog: HydrationLog = {
       id: Date.now().toString(),
       amount,
       timestamp: new Date(),
     };
     setTodayLogs(prev => [...prev, newLog]);
-  };
+
+    return {
+      needsHourlyWarning: warnings.hourly,
+      needsDailyWarning: warnings.daily,
+    };
+  }, [checkWaterWarnings]);
 
   const removeLog = (id: string) => {
     setTodayLogs(prev => prev.filter(log => log.id !== id));
+  };
+
+  const submitFeedback = (rating: number) => {
+    // Save the feedback (in a real app, this would sync to the backend)
+    console.log('Feedback submitted:', { rating, ...previousDayData });
+    localStorage.setItem(STORAGE_KEYS.LAST_SURVEY_DATE, new Date().toDateString());
+    setShowMorningSurvey(false);
   };
 
   return (
@@ -157,6 +245,12 @@ export function HydrationProvider({ children }: { children: ReactNode }) {
         onboardingComplete,
         setOnboardingComplete,
         weeklyData,
+        lastHourIntake,
+        checkWaterWarnings,
+        previousDayData,
+        submitFeedback,
+        showMorningSurvey,
+        setShowMorningSurvey,
       }}
     >
       {children}

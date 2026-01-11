@@ -14,7 +14,126 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      daily_feedback: {
+        Row: {
+          created_at: string
+          daily_target: number | null
+          date: string
+          hydration_rating: number
+          id: string
+          total_consumed: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          daily_target?: number | null
+          date: string
+          hydration_rating: number
+          id?: string
+          total_consumed?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          daily_target?: number | null
+          date?: string
+          hydration_rating?: number
+          id?: string
+          total_consumed?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      hydration_logs: {
+        Row: {
+          amount: number
+          created_at: string
+          date: string
+          id: string
+          logged_at: string
+          user_id: string
+          weather_humidity: number | null
+          weather_temp: number | null
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          date?: string
+          id?: string
+          logged_at?: string
+          user_id: string
+          weather_humidity?: number | null
+          weather_temp?: number | null
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          date?: string
+          id?: string
+          logged_at?: string
+          user_id?: string
+          weather_humidity?: number | null
+          weather_temp?: number | null
+        }
+        Relationships: []
+      }
+      profiles: {
+        Row: {
+          age_range: string | null
+          created_at: string
+          dark_mode: boolean | null
+          display_name: string | null
+          email: string | null
+          gender: string | null
+          gps_enabled: boolean | null
+          health_conditions: string[] | null
+          hrt_months: number | null
+          id: string
+          medications: Json | null
+          notification_enabled: boolean | null
+          updated_at: string
+          user_id: string
+          weight: number | null
+          weight_unit: string | null
+        }
+        Insert: {
+          age_range?: string | null
+          created_at?: string
+          dark_mode?: boolean | null
+          display_name?: string | null
+          email?: string | null
+          gender?: string | null
+          gps_enabled?: boolean | null
+          health_conditions?: string[] | null
+          hrt_months?: number | null
+          id?: string
+          medications?: Json | null
+          notification_enabled?: boolean | null
+          updated_at?: string
+          user_id: string
+          weight?: number | null
+          weight_unit?: string | null
+        }
+        Update: {
+          age_range?: string | null
+          created_at?: string
+          dark_mode?: boolean | null
+          display_name?: string | null
+          email?: string | null
+          gender?: string | null
+          gps_enabled?: boolean | null
+          health_conditions?: string[] | null
+          hrt_months?: number | null
+          id?: string
+          medications?: Json | null
+          notification_enabled?: boolean | null
+          updated_at?: string
+          user_id?: string
+          weight?: number | null
+          weight_unit?: string | null
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
