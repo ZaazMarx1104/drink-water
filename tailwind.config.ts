@@ -7,7 +7,7 @@ export default {
   theme: {
     container: {
       center: true,
-      padding: "2rem",
+      padding: "1rem",
       screens: {
         "2xl": "1400px",
       },
@@ -39,6 +39,10 @@ export default {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
         },
+        progress: {
+          DEFAULT: "hsl(var(--progress))",
+          foreground: "hsl(var(--progress-foreground))",
+        },
         popover: {
           DEFAULT: "hsl(var(--popover))",
           foreground: "hsl(var(--popover-foreground))",
@@ -46,6 +50,11 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
+        },
+        water: {
+          light: "hsl(var(--water-light))",
+          dark: "hsl(var(--water-dark))",
+          glow: "hsl(var(--water-glow))",
         },
         sidebar: {
           DEFAULT: "hsl(var(--sidebar-background))",
@@ -62,28 +71,42 @@ export default {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        xl: "calc(var(--radius) + 4px)",
+        "2xl": "calc(var(--radius) + 8px)",
+        "3xl": "calc(var(--radius) + 16px)",
+      },
+      fontFamily: {
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
       keyframes: {
         "accordion-down": {
-          from: {
-            height: "0",
-          },
-          to: {
-            height: "var(--radix-accordion-content-height)",
-          },
+          from: { height: "0" },
+          to: { height: "var(--radix-accordion-content-height)" },
         },
         "accordion-up": {
-          from: {
-            height: "var(--radix-accordion-content-height)",
-          },
-          to: {
-            height: "0",
-          },
+          from: { height: "var(--radix-accordion-content-height)" },
+          to: { height: "0" },
+        },
+        "water-wave": {
+          "0%, 100%": { transform: "translateY(0) scaleY(1)" },
+          "50%": { transform: "translateY(-5%) scaleY(1.02)" },
+        },
+        "drink-splash": {
+          "0%": { transform: "scale(1)", opacity: "1" },
+          "50%": { transform: "scale(1.2)", opacity: "0.8" },
+          "100%": { transform: "scale(1)", opacity: "1" },
         },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "water-wave": "water-wave 2s ease-in-out infinite",
+        "drink-splash": "drink-splash 0.5s ease-out",
+      },
+      boxShadow: {
+        water: "0 4px 20px hsl(var(--primary) / 0.25)",
+        glow: "0 0 40px hsl(var(--accent) / 0.3)",
+        card: "0 4px 16px hsl(var(--primary) / 0.1)",
       },
     },
   },
