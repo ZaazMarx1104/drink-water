@@ -274,10 +274,6 @@ export default function Dashboard() {
         </Dialog>
       </div>
 
-      {/* Ad Banner Placeholder */}
-      <div className="fixed bottom-16 left-0 right-0 h-14 bg-muted border-t border-border flex items-center justify-center z-20">
-        <span className="text-xs text-muted-foreground">AdMob Banner (320×50)</span>
-      </div>
 
       {/* Water Warning Dialog */}
       <WaterWarningDialog

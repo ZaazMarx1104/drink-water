@@ -53,7 +53,7 @@ export default function StatsPage() {
               <Sun className="h-6 w-6 text-accent flex-shrink-0 mt-0.5" />
               <div>
                 <p className="font-medium text-foreground">
-                  It's {weather.temperature}°C in {weather.city} today!
+                  It's {weather.temperature.toFixed(1)}°C in {weather.city} today!
                 </p>
                 <p className="text-sm text-muted-foreground mt-1">
                   We added {hydrationResult.environmentAdjustment} ml more to beat the heat.
