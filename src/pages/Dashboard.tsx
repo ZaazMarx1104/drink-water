@@ -176,62 +176,10 @@ export default function Dashboard() {
 
       {/* Quick Add Section */}
       <div className="px-6 pb-6 relative z-10">
-        {/* Quick amount buttons */}
-        <div className="grid grid-cols-4 gap-3 mb-4">
-          {quickAmounts.map((amount) => (
-            <WaterButton
-              key={amount}
-              amount={amount}
-              onClick={handleAddWater}
-            />
-          ))}
-        </div>
-
-        {/* Custom button */}
-        <Dialog open={isCustomDialogOpen} onOpenChange={setIsCustomDialogOpen}>
-          <DialogTrigger asChild>
-            <WaterButton
-              amount={0}
-              label="CUSTOM"
-              variant="custom"
-              onClick={() => {}}
-              className="w-full"
-            />
-          </DialogTrigger>
-          <DialogContent className="w-[90%] rounded-2xl">
-            <DialogHeader>
-              <DialogTitle>Add Custom Amount</DialogTitle>
-            </DialogHeader>
-            <div className="flex gap-3">
-              <Input
-                type="number"
-                value={customAmount}
-                onChange={(e) => setCustomAmount(e.target.value)}
-                placeholder="Enter ml"
-                className="flex-1 h-12"
-                min={1}
-                max={5000}
-              />
-              <Button onClick={handleCustomAdd} className="h-12 px-6 water-gradient">
-                Add
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-
-        {/* Drink & Save button */}
-        <Button
-          onClick={() => handleAddWater(hydrationResult.nextDrinkAmount)}
-          className="w-full h-14 mt-4 text-lg font-semibold water-gradient hover:opacity-90 shadow-water"
-        >
-          <Droplets className="mr-2 h-5 w-5" />
-          Drink {hydrationResult.nextDrinkAmount} ml & Save
-        </Button>
-
-        {/* Past water link */}
+        {/* Past water link - moved up */}
         <Dialog open={isPastDialogOpen} onOpenChange={setIsPastDialogOpen}>
           <DialogTrigger asChild>
-            <button className="w-full mt-3 text-sm text-primary hover:underline flex items-center justify-center gap-1">
+            <button className="w-full mb-4 text-sm text-primary hover:underline flex items-center justify-center gap-1">
               <Clock className="h-4 w-4" />
               Had water & forgot to add it? Click Here
             </button>
@@ -272,9 +220,64 @@ export default function Dashboard() {
             </div>
           </DialogContent>
         </Dialog>
+
+        {/* Quick amount buttons with custom as 5th option */}
+        <div className="overflow-x-auto pb-2 -mx-2 px-2">
+          <div className="flex gap-3 min-w-max">
+            {quickAmounts.map((amount) => (
+              <WaterButton
+                key={amount}
+                amount={amount}
+                onClick={handleAddWater}
+                className="w-[72px] flex-shrink-0"
+              />
+            ))}
+            
+            {/* Custom button - same size as others */}
+            <Dialog open={isCustomDialogOpen} onOpenChange={setIsCustomDialogOpen}>
+              <DialogTrigger asChild>
+                <div>
+                  <WaterButton
+                    amount={0}
+                    label="CUSTOM"
+                    variant="custom"
+                    onClick={() => {}}
+                    className="w-[72px] flex-shrink-0"
+                  />
+                </div>
+              </DialogTrigger>
+              <DialogContent className="w-[90%] rounded-2xl">
+                <DialogHeader>
+                  <DialogTitle>Add Custom Amount</DialogTitle>
+                </DialogHeader>
+                <div className="flex gap-3">
+                  <Input
+                    type="number"
+                    value={customAmount}
+                    onChange={(e) => setCustomAmount(e.target.value)}
+                    placeholder="Enter ml"
+                    className="flex-1 h-12"
+                    min={1}
+                    max={5000}
+                  />
+                  <Button onClick={handleCustomAdd} className="h-12 px-6 water-gradient">
+                    Add
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
+
+        {/* Drink & Save button */}
+        <Button
+          onClick={() => handleAddWater(hydrationResult.nextDrinkAmount)}
+          className="w-full h-14 mt-4 text-lg font-semibold water-gradient hover:opacity-90 shadow-water"
+        >
+          <Droplets className="mr-2 h-5 w-5" />
+          Drink {hydrationResult.nextDrinkAmount} ml & Save
+        </Button>
       </div>
-
-
       {/* Water Warning Dialog */}
       <WaterWarningDialog
         open={showWarning}

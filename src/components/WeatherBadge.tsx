@@ -32,7 +32,7 @@ export function WeatherBadge({ temperature, adjustment, className }: WeatherBadg
     <div className={cn("flex flex-col gap-2", className)}>
       <div className="flex items-center gap-2 rounded-xl bg-card px-3 py-2 text-sm shadow-card">
         <WeatherIcon className="h-5 w-5 text-primary" />
-        <span className="font-medium">Temp: {temperature}°C</span>
+        <span className="font-medium">Temp: {temperature.toFixed(1)}°C</span>
       </div>
       
       {adjustment && adjustment > 0 && (

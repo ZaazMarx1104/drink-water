@@ -12,6 +12,7 @@ interface HydrationLog {
   id: string;
   amount: number;
   timestamp: Date;
+  date: string; // YYYY-MM-DD format for backend consistency
 }
 
 interface HydrationContextType {
@@ -205,11 +206,13 @@ export function HydrationProvider({ children }: { children: ReactNode }) {
 
   const addWater = useCallback((amount: number) => {
     const warnings = checkWaterWarnings(amount);
+    const now = new Date();
     
     const newLog: HydrationLog = {
       id: Date.now().toString(),
       amount,
-      timestamp: new Date(),
+      timestamp: now,
+      date: now.toISOString().split('T')[0], // YYYY-MM-DD format
     };
     setTodayLogs(prev => [...prev, newLog]);
 
