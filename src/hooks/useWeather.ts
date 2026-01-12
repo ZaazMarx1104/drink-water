@@ -15,18 +15,41 @@ export function useWeather() {
   const [location, setLocation] = useState<GeoLocation | null>(null);
 
   const fetchWeather = useCallback(async (lat: number, lon: number) => {
-    // For demo purposes, return mock weather if no API key
+    // For demo purposes without API key, return more accurate mock weather based on location
     if (!OPENWEATHER_API_KEY) {
-      // Simulate weather based on time of day
-      const hour = new Date().getHours();
-      const isHot = hour >= 10 && hour <= 16;
+      // Get current time for realistic temperature simulation
+      const now = new Date();
+      const hour = now.getHours();
+      const month = now.getMonth(); // 0-11
+      
+      // Simulate seasonal variation (Northern Hemisphere assumed)
+      const isSummer = month >= 4 && month <= 8;
+      const baseTemp = isSummer ? 22 : 12;
+      
+      // Simulate daily temperature cycle (cooler at night, warmer midday)
+      let dailyVariation = 0;
+      if (hour >= 6 && hour < 12) {
+        // Morning warming
+        dailyVariation = ((hour - 6) / 6) * 8;
+      } else if (hour >= 12 && hour < 18) {
+        // Afternoon peak
+        dailyVariation = 8 - ((hour - 12) / 6) * 4;
+      } else if (hour >= 18 && hour < 22) {
+        // Evening cooling
+        dailyVariation = 4 - ((hour - 18) / 4) * 4;
+      } else {
+        // Night (coldest)
+        dailyVariation = -2;
+      }
+      
+      const temperature = baseTemp + dailyVariation;
       
       setWeather({
-        temperature: isHot ? 28 + Math.random() * 8 : 18 + Math.random() * 6,
-        humidity: 50 + Math.random() * 30,
+        temperature: Math.round(temperature * 10) / 10, // One decimal place
+        humidity: 50 + Math.random() * 20, // 50-70% humidity
         altitude: 100,
-        uvIndex: isHot ? 6 + Math.random() * 4 : 2 + Math.random() * 3,
-        city: 'Your City',
+        uvIndex: hour >= 10 && hour <= 16 ? 5 + Math.random() * 3 : 1 + Math.random() * 2,
+        city: 'Your Location',
       });
       return;
     }
@@ -46,7 +69,7 @@ export function useWeather() {
       const data = await response.json();
 
       setWeather({
-        temperature: Math.round(data.main.temp),
+        temperature: Math.round(data.main.temp * 10) / 10, // One decimal place
         humidity: data.main.humidity,
         altitude: 0, // OpenWeather doesn't provide altitude
         uvIndex: 5, // Would need UV index API

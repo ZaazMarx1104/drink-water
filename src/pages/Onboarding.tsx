@@ -4,12 +4,13 @@ import { useHydration } from '@/contexts/HydrationContext';
 import { OnboardingScreen } from '@/components/OnboardingScreen';
 import { SelectionCard } from '@/components/SelectionCard';
 import { GenderPopup } from '@/components/GenderPopup';
-import { MedicationsList, Medication } from '@/components/MedicationsList';
+import { ConditionAutocomplete } from '@/components/ConditionAutocomplete';
+import { MedicationAutocomplete } from '@/components/MedicationAutocomplete';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { healthConditionsList } from '@/lib/hydration';
-import { Droplets, User, Calendar, Scale, HeartPulse, MapPin, ChevronLeft } from 'lucide-react';
+import { User, Calendar, Scale, HeartPulse, MapPin } from 'lucide-react';
 import { toast } from 'sonner';
 
 type OnboardingStep = 'gender' | 'age' | 'weight' | 'health' | 'gps';
@@ -34,9 +35,8 @@ export default function Onboarding() {
   const [weight, setWeight] = useState(profile.weight?.toString() || '');
   const [weightUnit, setWeightUnit] = useState<'kg' | 'lb'>(profile.weightUnit);
   const [selectedConditions, setSelectedConditions] = useState<string[]>(profile.healthConditions);
-  const [customCondition, setCustomCondition] = useState('');
-  const [medications, setMedications] = useState<Medication[]>(
-    profile.medicationsList || []
+  const [selectedMedications, setSelectedMedications] = useState<string[]>(
+    profile.medicationsList?.map((m: any) => typeof m === 'string' ? m : m.name) || []
   );
   const [gpsEnabled, setGpsEnabled] = useState(profile.gpsEnabled);
 
@@ -74,8 +74,8 @@ export default function Onboarding() {
         break;
       case 'health':
         updatedProfile.healthConditions = selectedConditions;
-        updatedProfile.medicationsList = medications;
-        updatedProfile.medications = medications.map((m) => m.name).join(', ');
+        updatedProfile.medicationsList = selectedMedications.map(name => ({ id: Date.now().toString(), name, type: 'other' as const }));
+        updatedProfile.medications = selectedMedications.join(', ');
         break;
       case 'gps':
         updatedProfile.gpsEnabled = gpsEnabled;
@@ -101,21 +101,6 @@ export default function Onboarding() {
     } else {
       setOnboardingComplete(true);
       navigate('/');
-    }
-  };
-
-  const toggleCondition = (condition: string) => {
-    setSelectedConditions(prev =>
-      prev.includes(condition)
-        ? prev.filter(c => c !== condition)
-        : [...prev, condition]
-    );
-  };
-
-  const addCustomCondition = () => {
-    if (customCondition.trim() && !selectedConditions.includes(customCondition.trim())) {
-      setSelectedConditions(prev => [...prev, customCondition.trim()]);
-      setCustomCondition('');
     }
   };
 
@@ -232,45 +217,30 @@ export default function Onboarding() {
 
       case 'health':
         return (
-          <>
-            <div className="space-y-3 max-h-[35vh] overflow-y-auto">
-              {healthConditionsList.map((condition) => (
-                <SelectionCard
-                  key={condition}
-                  label={condition}
-                  selected={selectedConditions.includes(condition)}
-                  onClick={() => toggleCondition(condition)}
-                  variant="checkbox"
-                />
-              ))}
-            </div>
-            
-            <div className="mt-4 flex gap-2">
-              <Input
-                value={customCondition}
-                onChange={(e) => setCustomCondition(e.target.value)}
-                placeholder="Add custom condition"
-                className="flex-1"
-                onKeyDown={(e) => e.key === 'Enter' && addCustomCondition()}
+          <div className="space-y-6">
+            <div>
+              <Label className="text-sm font-medium mb-3 block">
+                Health Conditions
+              </Label>
+              <ConditionAutocomplete
+                options={healthConditionsList}
+                selected={selectedConditions}
+                onChange={setSelectedConditions}
+                placeholder="Search health conditions..."
               />
-              <button
-                onClick={addCustomCondition}
-                className="px-4 py-2 rounded-xl bg-primary text-primary-foreground font-medium"
-              >
-                Add
-              </button>
             </div>
             
-            <div className="mt-6">
+            <div>
               <Label className="text-sm font-medium mb-3 block">
                 Medications (optional)
               </Label>
-              <MedicationsList
-                medications={medications}
-                onMedicationsChange={setMedications}
+              <MedicationAutocomplete
+                selected={selectedMedications}
+                onChange={setSelectedMedications}
+                placeholder="Search medications..."
               />
             </div>
-          </>
+          </div>
         );
 
       case 'gps':
