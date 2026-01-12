@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useHydration } from '@/contexts/HydrationContext';
-import { CircularProgress } from '@/components/CircularProgress';
+import { WaterGlassProgress } from '@/components/WaterGlassProgress';
 import { WaterButton } from '@/components/WaterButton';
 import { WeatherBadge } from '@/components/WeatherBadge';
 import { TabBar, TabId } from '@/components/TabBar';
@@ -127,14 +127,13 @@ export default function Dashboard() {
           className="mb-6"
         />
 
-        {/* Circular Progress */}
+        {/* Water Glass Progress */}
         <div className="relative">
-          <CircularProgress
+          <WaterGlassProgress
             value={totalConsumed}
             max={hydrationResult.dailyTarget}
             size={240}
-            strokeWidth={16}
-            className="mb-6"
+            className="mb-4"
           >
             <div className="text-center">
               <div className="text-5xl font-bold water-text-gradient">
@@ -144,11 +143,11 @@ export default function Dashboard() {
                 {totalConsumed} / {hydrationResult.dailyTarget} ml
               </div>
             </div>
-          </CircularProgress>
+          </WaterGlassProgress>
         </div>
 
         {/* Status Message */}
-        <div className="text-center mb-6 animate-fade-in">
+        <div className="text-center mb-4 animate-fade-in">
           {percentage >= 100 ? (
             <div className="flex items-center gap-2 text-accent">
               <Award className="h-5 w-5" />
@@ -167,7 +166,7 @@ export default function Dashboard() {
 
         {/* Remaining indicator */}
         {remaining > 0 && (
-          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2">
             <TrendingUp className="h-4 w-4" />
             <span>{remaining} ml remaining for today</span>
           </div>
@@ -176,10 +175,10 @@ export default function Dashboard() {
 
       {/* Quick Add Section */}
       <div className="px-6 pb-6 relative z-10">
-        {/* Past water link - moved up */}
+        {/* Past water link - moved up with reduced margin */}
         <Dialog open={isPastDialogOpen} onOpenChange={setIsPastDialogOpen}>
           <DialogTrigger asChild>
-            <button className="w-full mb-4 text-sm text-primary hover:underline flex items-center justify-center gap-1">
+            <button className="w-full mb-3 text-sm text-primary hover:underline flex items-center justify-center gap-1">
               <Clock className="h-4 w-4" />
               Had water & forgot to add it? Click Here
             </button>
@@ -221,15 +220,15 @@ export default function Dashboard() {
           </DialogContent>
         </Dialog>
 
-        {/* Quick amount buttons with custom as 5th option */}
-        <div className="overflow-x-auto pb-2 -mx-2 px-2">
-          <div className="flex gap-3 min-w-max">
+        {/* Quick amount buttons with custom as 5th option - smaller with hidden scrollbar */}
+        <div className="overflow-x-auto pb-1 -mx-2 px-2 scrollbar-hide">
+          <div className="flex gap-2">
             {quickAmounts.map((amount) => (
               <WaterButton
                 key={amount}
                 amount={amount}
                 onClick={handleAddWater}
-                className="w-[72px] flex-shrink-0"
+                className="w-[64px] flex-shrink-0"
               />
             ))}
             
@@ -242,7 +241,7 @@ export default function Dashboard() {
                     label="CUSTOM"
                     variant="custom"
                     onClick={() => {}}
-                    className="w-[72px] flex-shrink-0"
+                    className="w-[64px] flex-shrink-0"
                   />
                 </div>
               </DialogTrigger>

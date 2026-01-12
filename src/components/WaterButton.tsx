@@ -31,7 +31,7 @@ export function WaterButton({
     <button
       onClick={handleClick}
       className={cn(
-        "relative overflow-hidden rounded-2xl p-4 font-semibold transition-all duration-300",
+        "relative overflow-hidden rounded-xl p-3 font-semibold transition-all duration-300",
         "active:scale-95 hover:shadow-water no-select",
         variant === 'default' && "bg-secondary text-secondary-foreground hover:bg-secondary/80",
         variant === 'primary' && "water-gradient text-primary-foreground shadow-water",
@@ -40,13 +40,13 @@ export function WaterButton({
         className
       )}
     >
-      <div className="flex flex-col items-center gap-1">
+      <div className="flex flex-col items-center gap-0.5">
         {variant === 'custom' ? (
-          <span className="text-lg">+</span>
+          <span className="text-base">+</span>
         ) : (
-          <Droplets className="h-5 w-5" />
+          <Droplets className="h-4 w-4" />
         )}
-        <span className="text-sm">{displayLabel}</span>
+        <span className="text-xs">{displayLabel}</span>
       </div>
       
       {/* Ripple effect */}

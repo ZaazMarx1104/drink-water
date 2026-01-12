@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
 import { SelectionCard } from '@/components/SelectionCard';
+import { ConditionAutocomplete } from '@/components/ConditionAutocomplete';
 import { genderOptions, ageRangeOptions, healthConditionsList, toKg, toLb } from '@/lib/hydration';
 import { 
   User, Calendar, Scale, HeartPulse, MapPin, Moon, Bell, 
@@ -25,7 +26,8 @@ export default function ProfilePage() {
   const [editWeightUnit, setEditWeightUnit] = useState<'kg' | 'lb'>(profile.weightUnit);
   const [editAgeRange, setEditAgeRange] = useState(profile.ageRange);
   const [editConditions, setEditConditions] = useState<string[]>(profile.healthConditions);
-  const [customCondition, setCustomCondition] = useState('');
+  const [editGender, setEditGender] = useState(profile.gender);
+  const [editGpsEnabled, setEditGpsEnabled] = useState(profile.gpsEnabled);
 
   const getGenderLabel = () => {
     const option = genderOptions.find(o => o.value === profile.gender);
@@ -72,15 +74,16 @@ export default function ProfilePage() {
     );
   };
 
-  const addCustomCondition = () => {
-    if (customCondition.trim() && !editConditions.includes(customCondition.trim())) {
-      setEditConditions(prev => [...prev, customCondition.trim()]);
-      setCustomCondition('');
-    }
-  };
-
   const saveConditions = () => {
     setProfile({ ...profile, healthConditions: editConditions });
+  };
+
+  const saveGender = () => {
+    setProfile({ ...profile, gender: editGender });
+  };
+
+  const saveGps = () => {
+    setProfile({ ...profile, gpsEnabled: editGpsEnabled });
   };
 
   const openWeightDialog = () => {
@@ -94,7 +97,14 @@ export default function ProfilePage() {
 
   const openConditionsDialog = () => {
     setEditConditions(profile.healthConditions);
-    setCustomCondition('');
+  };
+
+  const openGenderDialog = () => {
+    setEditGender(profile.gender);
+  };
+
+  const openGpsDialog = () => {
+    setEditGpsEnabled(profile.gpsEnabled);
   };
 
   return (
@@ -124,13 +134,44 @@ export default function ProfilePage() {
           <h3 className="font-semibold p-4 pb-2">Personal Information</h3>
           
           <div className="divide-y divide-border">
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <User className="h-5 w-5 text-muted-foreground" />
-                <span>Gender</span>
-              </div>
-              <span className="text-muted-foreground">{getGenderLabel()}</span>
-            </div>
+            {/* Editable Gender */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <button 
+                  onClick={openGenderDialog}
+                  className="flex items-center justify-between p-4 w-full text-left hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <User className="h-5 w-5 text-muted-foreground" />
+                    <span>Gender</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">{getGenderLabel()}</span>
+                    <Pencil className="h-4 w-4 text-primary" />
+                  </div>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="w-[90%] rounded-2xl max-h-[80vh]">
+                <DialogHeader>
+                  <DialogTitle>Edit Gender</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                  {genderOptions.map((option) => (
+                    <SelectionCard
+                      key={option.value}
+                      label={option.label}
+                      selected={editGender === option.value}
+                      onClick={() => setEditGender(option.value)}
+                    />
+                  ))}
+                </div>
+                <DialogClose asChild>
+                  <Button onClick={saveGender} className="w-full water-gradient mt-4">
+                    Save
+                  </Button>
+                </DialogClose>
+              </DialogContent>
+            </Dialog>
             
             {/* Editable Age Range */}
             <Dialog>
@@ -254,39 +295,13 @@ export default function ProfilePage() {
                 <DialogHeader>
                   <DialogTitle>Edit Health Conditions</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-3 max-h-[40vh] overflow-y-auto">
-                  {healthConditionsList.map((condition) => (
-                    <SelectionCard
-                      key={condition}
-                      label={condition}
-                      selected={editConditions.includes(condition)}
-                      onClick={() => toggleCondition(condition)}
-                      variant="checkbox"
-                    />
-                  ))}
-                  {editConditions
-                    .filter(c => !healthConditionsList.includes(c))
-                    .map((condition) => (
-                      <SelectionCard
-                        key={condition}
-                        label={condition}
-                        selected={true}
-                        onClick={() => toggleCondition(condition)}
-                        variant="checkbox"
-                      />
-                    ))}
-                </div>
-                <div className="flex gap-2 mt-4">
-                  <Input
-                    value={customCondition}
-                    onChange={(e) => setCustomCondition(e.target.value)}
-                    placeholder="Add custom condition"
-                    className="flex-1"
-                    onKeyDown={(e) => e.key === 'Enter' && addCustomCondition()}
+                <div className="py-4">
+                  <ConditionAutocomplete
+                    options={healthConditionsList}
+                    selected={editConditions}
+                    onChange={setEditConditions}
+                    placeholder="Search health conditions..."
                   />
-                  <Button onClick={addCustomCondition} variant="outline">
-                    Add
-                  </Button>
                 </div>
                 <DialogClose asChild>
                   <Button onClick={saveConditions} className="w-full water-gradient mt-2">
@@ -296,15 +311,51 @@ export default function ProfilePage() {
               </DialogContent>
             </Dialog>
             
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <MapPin className="h-5 w-5 text-muted-foreground" />
-                <span>GPS Location</span>
-              </div>
-              <span className={profile.gpsEnabled ? 'text-accent' : 'text-muted-foreground'}>
-                {profile.gpsEnabled ? 'Enabled' : 'Disabled'}
-              </span>
-            </div>
+            {/* Editable GPS */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <button 
+                  onClick={openGpsDialog}
+                  className="flex items-center justify-between p-4 w-full text-left hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <MapPin className="h-5 w-5 text-muted-foreground" />
+                    <span>GPS Location</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className={editGpsEnabled ? 'text-accent' : 'text-muted-foreground'}>
+                      {profile.gpsEnabled ? 'Enabled' : 'Disabled'}
+                    </span>
+                    <Pencil className="h-4 w-4 text-primary" />
+                  </div>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="w-[90%] rounded-2xl">
+                <DialogHeader>
+                  <DialogTitle>GPS Location Settings</DialogTitle>
+                </DialogHeader>
+                <div className="py-4">
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Enable GPS to get weather-adjusted hydration recommendations based on your local temperature and humidity.
+                  </p>
+                  <div className="flex items-center justify-between rounded-xl border border-border p-4">
+                    <div className="flex items-center gap-3">
+                      <MapPin className="h-5 w-5 text-primary" />
+                      <span className="font-medium">Enable GPS</span>
+                    </div>
+                    <Switch
+                      checked={editGpsEnabled}
+                      onCheckedChange={setEditGpsEnabled}
+                    />
+                  </div>
+                </div>
+                <DialogClose asChild>
+                  <Button onClick={saveGps} className="w-full water-gradient">
+                    Save
+                  </Button>
+                </DialogClose>
+              </DialogContent>
+            </Dialog>
           </div>
         </Card>
 
