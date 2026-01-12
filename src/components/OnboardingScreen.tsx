@@ -34,7 +34,7 @@ export function OnboardingScreen({
   return (
     <div className="flex min-h-screen flex-col bg-background safe-area-top safe-area-bottom relative z-10">
       {/* Header with progress */}
-      <div className="flex items-center justify-between p-4">
+      <div className="flex items-center justify-between p-4 flex-shrink-0">
         {showBack && onBack ? (
           <button
             onClick={onBack}
@@ -78,25 +78,25 @@ export function OnboardingScreen({
 
       {/* Illustration */}
       {illustration && (
-        <div className="flex justify-center py-6">
+        <div className="flex justify-center py-6 flex-shrink-0">
           {illustration}
         </div>
       )}
 
-      {/* Content */}
-      <div className="flex-1 px-6 animate-slide-up">
+      {/* Scrollable Content */}
+      <div className="flex-1 px-6 animate-slide-up overflow-y-auto min-h-0">
         <h1 className="mb-2 text-2xl font-bold text-foreground">{title}</h1>
         {subtitle && (
           <p className="mb-6 text-muted-foreground">{subtitle}</p>
         )}
         
-        <div className="py-4">
+        <div className="py-4 pb-8">
           {children}
         </div>
       </div>
 
-      {/* Bottom buttons */}
-      <div className="p-6 space-y-3">
+      {/* Fixed Bottom buttons */}
+      <div className="p-6 space-y-3 flex-shrink-0 bg-background border-t border-border/50">
         <Button
           onClick={onContinue}
           disabled={continueDisabled}

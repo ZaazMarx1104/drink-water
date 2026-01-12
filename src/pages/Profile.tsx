@@ -4,11 +4,14 @@ import { useHydration } from '@/contexts/HydrationContext';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Switch } from '@/components/ui/switch';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogClose } from '@/components/ui/dialog';
+import { SelectionCard } from '@/components/SelectionCard';
 import { genderOptions, ageRangeOptions, healthConditionsList, toKg, toLb } from '@/lib/hydration';
 import { 
   User, Calendar, Scale, HeartPulse, MapPin, Moon, Bell, 
-  ChevronRight, Info, Shield, Crown, LogOut
+  ChevronRight, Info, Shield, Crown, LogOut, Pencil
 } from 'lucide-react';
 
 export default function ProfilePage() {
@@ -16,6 +19,13 @@ export default function ProfilePage() {
   const { profile, setProfile, setOnboardingComplete } = useHydration();
   const [darkMode, setDarkMode] = useState(false);
   const [notifications, setNotifications] = useState(true);
+  
+  // Edit states
+  const [editWeight, setEditWeight] = useState(profile.weight?.toString() || '');
+  const [editWeightUnit, setEditWeightUnit] = useState<'kg' | 'lb'>(profile.weightUnit);
+  const [editAgeRange, setEditAgeRange] = useState(profile.ageRange);
+  const [editConditions, setEditConditions] = useState<string[]>(profile.healthConditions);
+  const [customCondition, setCustomCondition] = useState('');
 
   const getGenderLabel = () => {
     const option = genderOptions.find(o => o.value === profile.gender);
@@ -41,6 +51,50 @@ export default function ProfilePage() {
   const toggleDarkMode = (enabled: boolean) => {
     setDarkMode(enabled);
     document.documentElement.classList.toggle('dark', enabled);
+  };
+
+  const saveWeight = () => {
+    const weightNum = parseFloat(editWeight);
+    if (weightNum >= 10 && weightNum <= 300) {
+      setProfile({ ...profile, weight: weightNum, weightUnit: editWeightUnit });
+    }
+  };
+
+  const saveAgeRange = () => {
+    setProfile({ ...profile, ageRange: editAgeRange });
+  };
+
+  const toggleCondition = (condition: string) => {
+    setEditConditions(prev =>
+      prev.includes(condition)
+        ? prev.filter(c => c !== condition)
+        : [...prev, condition]
+    );
+  };
+
+  const addCustomCondition = () => {
+    if (customCondition.trim() && !editConditions.includes(customCondition.trim())) {
+      setEditConditions(prev => [...prev, customCondition.trim()]);
+      setCustomCondition('');
+    }
+  };
+
+  const saveConditions = () => {
+    setProfile({ ...profile, healthConditions: editConditions });
+  };
+
+  const openWeightDialog = () => {
+    setEditWeight(profile.weight?.toString() || '');
+    setEditWeightUnit(profile.weightUnit);
+  };
+
+  const openAgeDialog = () => {
+    setEditAgeRange(profile.ageRange);
+  };
+
+  const openConditionsDialog = () => {
+    setEditConditions(profile.healthConditions);
+    setCustomCondition('');
   };
 
   return (
@@ -78,33 +132,169 @@ export default function ProfilePage() {
               <span className="text-muted-foreground">{getGenderLabel()}</span>
             </div>
             
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <Calendar className="h-5 w-5 text-muted-foreground" />
-                <span>Age Range</span>
-              </div>
-              <span className="text-muted-foreground">{getAgeLabel()}</span>
-            </div>
+            {/* Editable Age Range */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <button 
+                  onClick={openAgeDialog}
+                  className="flex items-center justify-between p-4 w-full text-left hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Calendar className="h-5 w-5 text-muted-foreground" />
+                    <span>Age Range</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">{getAgeLabel()}</span>
+                    <Pencil className="h-4 w-4 text-primary" />
+                  </div>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="w-[90%] rounded-2xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Age Range</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 max-h-[50vh] overflow-y-auto">
+                  {ageRangeOptions.map((option) => (
+                    <SelectionCard
+                      key={option.value}
+                      label={option.label}
+                      selected={editAgeRange === option.value}
+                      onClick={() => setEditAgeRange(option.value)}
+                    />
+                  ))}
+                </div>
+                <DialogClose asChild>
+                  <Button onClick={saveAgeRange} className="w-full water-gradient mt-4">
+                    Save
+                  </Button>
+                </DialogClose>
+              </DialogContent>
+            </Dialog>
             
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <Scale className="h-5 w-5 text-muted-foreground" />
-                <span>Weight</span>
-              </div>
-              <span className="text-muted-foreground">{getWeightDisplay()}</span>
-            </div>
+            {/* Editable Weight */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <button 
+                  onClick={openWeightDialog}
+                  className="flex items-center justify-between p-4 w-full text-left hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <Scale className="h-5 w-5 text-muted-foreground" />
+                    <span>Weight</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">{getWeightDisplay()}</span>
+                    <Pencil className="h-4 w-4 text-primary" />
+                  </div>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="w-[90%] rounded-2xl">
+                <DialogHeader>
+                  <DialogTitle>Edit Weight</DialogTitle>
+                </DialogHeader>
+                <div className="flex items-center gap-4 mb-4">
+                  <Input
+                    type="number"
+                    value={editWeight}
+                    onChange={(e) => setEditWeight(e.target.value)}
+                    placeholder={`Enter weight in ${editWeightUnit}`}
+                    className="flex-1 h-12"
+                    min={10}
+                    max={editWeightUnit === 'kg' ? 300 : 660}
+                  />
+                  <div className="flex items-center gap-2 rounded-xl bg-muted p-2">
+                    <button
+                      onClick={() => setEditWeightUnit('kg')}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                        editWeightUnit === 'kg' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                      }`}
+                    >
+                      kg
+                    </button>
+                    <button
+                      onClick={() => setEditWeightUnit('lb')}
+                      className={`px-4 py-2 rounded-lg font-medium transition-all ${
+                        editWeightUnit === 'lb' ? 'bg-primary text-primary-foreground' : 'text-muted-foreground'
+                      }`}
+                    >
+                      lb
+                    </button>
+                  </div>
+                </div>
+                <DialogClose asChild>
+                  <Button onClick={saveWeight} className="w-full water-gradient">
+                    Save
+                  </Button>
+                </DialogClose>
+              </DialogContent>
+            </Dialog>
             
-            <div className="flex items-center justify-between p-4">
-              <div className="flex items-center gap-3">
-                <HeartPulse className="h-5 w-5 text-muted-foreground" />
-                <span>Health Conditions</span>
-              </div>
-              <span className="text-muted-foreground">
-                {profile.healthConditions.length > 0 
-                  ? `${profile.healthConditions.length} selected`
-                  : 'None'}
-              </span>
-            </div>
+            {/* Editable Health Conditions */}
+            <Dialog>
+              <DialogTrigger asChild>
+                <button 
+                  onClick={openConditionsDialog}
+                  className="flex items-center justify-between p-4 w-full text-left hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <HeartPulse className="h-5 w-5 text-muted-foreground" />
+                    <span>Health Conditions</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground">
+                      {profile.healthConditions.length > 0 
+                        ? `${profile.healthConditions.length} selected`
+                        : 'None'}
+                    </span>
+                    <Pencil className="h-4 w-4 text-primary" />
+                  </div>
+                </button>
+              </DialogTrigger>
+              <DialogContent className="w-[90%] rounded-2xl max-h-[80vh]">
+                <DialogHeader>
+                  <DialogTitle>Edit Health Conditions</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-3 max-h-[40vh] overflow-y-auto">
+                  {healthConditionsList.map((condition) => (
+                    <SelectionCard
+                      key={condition}
+                      label={condition}
+                      selected={editConditions.includes(condition)}
+                      onClick={() => toggleCondition(condition)}
+                      variant="checkbox"
+                    />
+                  ))}
+                  {editConditions
+                    .filter(c => !healthConditionsList.includes(c))
+                    .map((condition) => (
+                      <SelectionCard
+                        key={condition}
+                        label={condition}
+                        selected={true}
+                        onClick={() => toggleCondition(condition)}
+                        variant="checkbox"
+                      />
+                    ))}
+                </div>
+                <div className="flex gap-2 mt-4">
+                  <Input
+                    value={customCondition}
+                    onChange={(e) => setCustomCondition(e.target.value)}
+                    placeholder="Add custom condition"
+                    className="flex-1"
+                    onKeyDown={(e) => e.key === 'Enter' && addCustomCondition()}
+                  />
+                  <Button onClick={addCustomCondition} variant="outline">
+                    Add
+                  </Button>
+                </div>
+                <DialogClose asChild>
+                  <Button onClick={saveConditions} className="w-full water-gradient mt-2">
+                    Save
+                  </Button>
+                </DialogClose>
+              </DialogContent>
+            </Dialog>
             
             <div className="flex items-center justify-between p-4">
               <div className="flex items-center gap-3">
@@ -115,20 +305,6 @@ export default function ProfilePage() {
                 {profile.gpsEnabled ? 'Enabled' : 'Disabled'}
               </span>
             </div>
-          </div>
-          
-          <div className="p-4 pt-2">
-            <Button 
-              variant="ghost" 
-              className="w-full text-primary"
-              onClick={() => {
-                setOnboardingComplete(false);
-                navigate('/onboarding');
-              }}
-            >
-              Update Information
-              <ChevronRight className="h-4 w-4 ml-1" />
-            </Button>
           </div>
         </Card>
 

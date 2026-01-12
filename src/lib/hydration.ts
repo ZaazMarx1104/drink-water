@@ -172,7 +172,7 @@ function getEnvironmentFactor(weather: WeatherData | null): { factor: number; ad
   if (weather.temperature > 25) {
     const tempAdjust = Math.min((weather.temperature - 25) * 0.03, 0.50);
     factor += tempAdjust;
-    adjustments.push({ label: `${weather.temperature}°C Heat`, value: Math.round(tempAdjust * 100) });
+    adjustments.push({ label: 'Temperature', value: Math.round(tempAdjust * 100) });
   }
 
   // Humidity adjustment: +10% if above 70%
